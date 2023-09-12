@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.cronodrak.catalog.dto.CategoryDTO;
 import com.cronodrak.catalog.entities.Category;
 import com.cronodrak.catalog.repositories.CategoryRepository;
-import com.cronodrak.catalog.services.exceptions.EntityNotFoundException;
+import com.cronodrak.catalog.services.exceptions.ResourceNotFoundException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class CategoryService {
@@ -22,7 +24,7 @@ public class CategoryService {
 	@Transactional(readOnly = true)
 	public List<CategoryDTO> findAll() {
 		List<Category> list = repository.findAll();
-		
+
 		return list.stream().map(x -> new CategoryDTO(x)).collect(Collectors.toList());
 
 	}
@@ -30,7 +32,7 @@ public class CategoryService {
 	@Transactional(readOnly = true)
 	public CategoryDTO findById(Long id) {
 		Optional<Category> obj = repository.findById(id);
-		Category entity = obj.orElseThrow(() -> new EntityNotFoundException("Entity not found"));
+		Category entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entity not found"));
 		return new CategoryDTO(entity);
 	}
 
@@ -40,5 +42,18 @@ public class CategoryService {
 		entity.setName(dto.getName());
 		entity = repository.save(entity);
 		return new CategoryDTO(entity);
+	}
+
+	@Transactional
+	public CategoryDTO update(Long id, CategoryDTO dto) {
+		try {
+			Category entity = repository.getReferenceById(id);
+			entity.setName(dto.getName());
+			entity = repository.save(entity);
+			return new CategoryDTO(entity);
+		} catch (EntityNotFoundException e) {
+			throw new ResourceNotFoundException("Id not found " + id);
+		}
+
 	}
 }
